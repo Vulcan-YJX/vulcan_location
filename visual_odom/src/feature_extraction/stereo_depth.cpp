@@ -20,6 +20,8 @@
 
 #include "feature_extraction/stereo_depth.hpp"
 
+#include "vpi_utils.hpp"
+
 // stereo_depth::stereo_depth(/* args */)
 // {
 // }

@@ -15,6 +15,7 @@ include_directories(include
 add_library(${LIB_NAME} SHARED
     # src/optflow_lk.cpp
     # src/optflow_dense.cpp
+    src/feature_extraction/orb_detector.cpp
     src/feature_extraction/stereo_depth.cpp
     src/camera/camera.cpp
 )
