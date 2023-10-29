@@ -22,7 +22,9 @@
 #define CAMERA_INFO_HPP_
 
 #include <yaml-cpp/yaml.h>
+
 #include <iostream>
+
 #include "opencv2/opencv.hpp"
 
 class Camera
@@ -45,11 +47,12 @@ public:
   cv::Size size;
 
 public:
-    Camera(/* args */);
-    bool init_camera_info(const std::string& camera_file);
-    void undistort_stereo(
-      cv::Mat& image_left, cv::Mat& image_right, cv::Mat& image_left_rect, cv::Mat& image_right_rect);
-    ~Camera();
+  Camera(/* args */);
+  bool init_camera_info(const std::string & camera_file);
+  void undistort_stereo(
+    cv::Mat & image_left, cv::Mat & image_right, cv::Mat & image_left_rect,
+    cv::Mat & image_right_rect);
+  ~Camera();
 };
 
 #endif /*CAMERA_INFO_HPP_*/

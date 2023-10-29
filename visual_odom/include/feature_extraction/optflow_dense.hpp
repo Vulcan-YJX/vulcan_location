@@ -23,12 +23,13 @@
 class optflow_dense
 {
 private:
-    /* data */
+  /* data */
 public:
-    int feature_point;
+  int feature_point;
+
 public:
-    optflow_dense(/* args */);
-    ~optflow_dense();
+  optflow_dense(/* args */);
+  ~optflow_dense();
 };
 
 #endif /*OPTFLOW_DENSE_HPP__*/

@@ -20,17 +20,16 @@
 #ifndef OPTFLOW_LK_HPP_
 #define OPTFLOW_LK_HPP_
 
-
 class optflow_lk
 {
 private:
-    /* data */
+  /* data */
 public:
-    int feature_point;
+  int feature_point;
 
 public:
-    optflow_lk(/* args */);
-    ~optflow_lk();
+  optflow_lk(/* args */);
+  ~optflow_lk();
 };
 
 #endif /*OPTFLOW_LK_HPP_*/

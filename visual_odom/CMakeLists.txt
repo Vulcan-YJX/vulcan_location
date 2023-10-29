@@ -6,6 +6,7 @@ set(LIB_NAME vulcan_vo_lib)
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
 find_package(yaml-cpp REQUIRED)
+find_package(vpi REQUIRED)
 
 include_directories(include
     ${OpenCV_INCLUDE_DIRS}
@@ -14,8 +15,8 @@ include_directories(include
 add_library(${LIB_NAME} SHARED
     # src/optflow_lk.cpp
     # src/optflow_dense.cpp
-
+    src/feature_extraction/stereo_depth.cpp
     src/camera/camera.cpp
 )
 
-target_link_libraries(${LIB_NAME} ${OpenCV_LIBRARIES} yaml-cpp)
+target_link_libraries(${LIB_NAME} ${OpenCV_LIBRARIES} yaml-cpp vpi)

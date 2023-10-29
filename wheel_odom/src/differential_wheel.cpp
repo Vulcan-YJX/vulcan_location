@@ -22,19 +22,20 @@
 
 namespace vulcan_wheel
 {
-        // 更新里程计，提供左右轮的编码器计数
-void DifferentialDriveOdometry::update(int left_encoder_counts, int right_encoder_counts) {
-        double left_distance = countToDistance(left_encoder_counts);
-        double right_distance = countToDistance(right_encoder_counts);
+// 更新里程计，提供左右轮的编码器计数
+void DifferentialDriveOdometry::update(int left_encoder_counts, int right_encoder_counts)
+{
+  double left_distance = countToDistance(left_encoder_counts);
+  double right_distance = countToDistance(right_encoder_counts);
 
-        // 计算平均距离和角度变化
-        double delta_distance = (right_distance + left_distance) / 2.0;
-        double delta_theta = (right_distance - left_distance) / wheel_base_;
+  // 计算平均距离和角度变化
+  double delta_distance = (right_distance + left_distance) / 2.0;
+  double delta_theta = (right_distance - left_distance) / wheel_base_;
 
-        // 更新位置和方向
-        x_ += delta_distance * cos(theta_);
-        y_ += delta_distance * sin(theta_);
-        theta_ += delta_theta;
-    }
-    
-} // namespace vulcan_wheel
+  // 更新位置和方向
+  x_ += delta_distance * cos(theta_);
+  y_ += delta_distance * sin(theta_);
+  theta_ += delta_theta;
+}
+
+}  // namespace vulcan_wheel

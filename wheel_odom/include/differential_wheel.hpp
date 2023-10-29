@@ -26,47 +26,44 @@
 namespace vulcan_wheel
 {
 
-class DifferentialDriveOdometry {
+class DifferentialDriveOdometry
+{
 public:
-    DifferentialDriveOdometry(double wheel_diameter, int encoder_counts_per_revolution, double wheel_base)
-        : wheel_radius_(wheel_diameter / 2.0)
-        , counts_per_revolution_(encoder_counts_per_revolution)
-        , wheel_base_(wheel_base)
-        , x_(0.0)
-        , y_(0.0)
-        , theta_(0.0)
-    {}
+  DifferentialDriveOdometry(
+    double wheel_diameter, int encoder_counts_per_revolution, double wheel_base)
+  : wheel_radius_(wheel_diameter / 2.0),
+    counts_per_revolution_(encoder_counts_per_revolution),
+    wheel_base_(wheel_base),
+    x_(0.0),
+    y_(0.0),
+    theta_(0.0)
+  {
+  }
 
-    void update(int left_encoder_counts, int right_encoder_counts);
+  void update(int left_encoder_counts, int right_encoder_counts);
 
-    // 获取当前位置和方向
-    double getX() const {
-        return x_;
-    }
+  // 获取当前位置和方向
+  double getX() const { return x_; }
 
-    double getY() const {
-        return y_;
-    }
+  double getY() const { return y_; }
 
-    double getTheta() const {
-        return theta_;
-    }
+  double getTheta() const { return theta_; }
 
 private:
-    // 将编码器计数转换为距离
-    double countToDistance(int counts) {
-        double revolutions = static_cast<double>(counts) / counts_per_revolution_;
-        return revolutions * 2.0 * M_PI * wheel_radius_;
-    }
+  // 将编码器计数转换为距离
+  double countToDistance(int counts)
+  {
+    double revolutions = static_cast<double>(counts) / counts_per_revolution_;
+    return revolutions * 2.0 * M_PI * wheel_radius_;
+  }
 
-    double wheel_radius_;
-    int counts_per_revolution_;
-    double wheel_base_;
-    double x_;
-    double y_;
-    double theta_;
+  double wheel_radius_;
+  int counts_per_revolution_;
+  double wheel_base_;
+  double x_;
+  double y_;
+  double theta_;
 };
-} // namespace vulcan_wheel
-
+}  // namespace vulcan_wheel
 
 #endif /*DIFFERENTIAL_WHEEL_HPP__*/

@@ -19,10 +19,6 @@
 */
 #include "feature_extraction/optflow_lk.hpp"
 
-optflow_lk::optflow_lk(/* args */)
-{
-}
+optflow_lk::optflow_lk(/* args */) {}
 
-optflow_lk::~optflow_lk()
-{
-}
+optflow_lk::~optflow_lk() {}

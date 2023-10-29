@@ -19,10 +19,6 @@
 */
 #include "feature_extraction/optflow_dense.hpp"
 
-optflow_dense::optflow_dense(/* args */)
-{
-}
+optflow_dense::optflow_dense(/* args */) {}
 
-optflow_dense::~optflow_dense()
-{
-}
+optflow_dense::~optflow_dense() {}
