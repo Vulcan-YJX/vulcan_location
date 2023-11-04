@@ -27,22 +27,32 @@
 
 #include "opencv2/opencv.hpp"
 
-class Camera
+class CameraInfo
 {
 private:
-  cv::VideoCapture cap;
+  int _image_height;
+  int _image_width;
 
-private:
-  std::string gstreamer_pipeline(
-    int sensor_id, int capture_width, int capture_height, int display_width, int display_height,
-    int framerate, int flip_method);
+  double _base_line;
+
+  cv::Mat _mapl1;
+  cv::Mat _mapl2;
+  cv::Mat _mapr1;
+  cv::Mat _mapr2;
 
 public:
-  Camera(
-    int sensor_id = 0, int capture_width = 1280, int capture_height = 720, int display_width = 960,
-    int display_height = 600, int framerate = 60, int flip_method = 0);
-  bool read_frame(cv::Mat & frame);
-  ~Camera();
+  cv::Mat K_l, K_r, T_l, T_r, R_l, R_r, D_l, D_r;
+  cv::Mat R1, R2, P1, P2, Q;
+  cv::Rect valid_roi1, valid_roi2;
+  cv::Size size;
+
+public:
+  CameraInfo(/* args */);
+  bool init_camera_info(const std::string & camera_file);
+  void undistort_stereo(
+    cv::Mat & image_left, cv::Mat & image_right, cv::Mat & image_left_rect,
+    cv::Mat & image_right_rect);
+  ~CameraInfo();
 };
 
 #endif /*CAMERA_INFO_HPP_*/

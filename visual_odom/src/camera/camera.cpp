@@ -20,57 +20,42 @@
 
 #include "camera/camera.hpp"
 
-Camera::Camera() {}
-
-bool Camera::init_camera_info(const std::string & camera_file)
+Camera::Camera(
+  int sensor_id, int capture_width, int capture_height, int display_width, int display_height,
+  int framerate, int flip_method)
 {
-  cv::FileStorage camera_configs(camera_file, cv::FileStorage::READ);
-  if (!camera_configs.isOpened()) {
-    std::cerr << "ERROR: Wrong path to settings" << std::endl;
+  // Create camera capture pipelines
+  std::string gst_pipeline = gstreamer_pipeline(
+    sensor_id, capture_width, capture_height, display_width, display_height, framerate,
+    flip_method);
+  cap(gst_pipeline, cv::CAP_GSTREAMER);
+  if (!cap.isOpened()) {
+    std::cerr << "Failed to open camera." << std::endl;
+  }
+}
+
+std::string Camera::gstreamer_pipeline(
+  int sensor_id, int capture_width, int capture_height, int display_width, int display_height,
+  int framerate, int flip_method)
+{
+  return "nvarguscamerasrc sensor_id=" + std::to_string(sensor_id) +
+         " ! video/x-raw(memory:NVMM), width=(int)" + std::to_string(capture_width) +
+         ", height=(int)" + std::to_string(capture_height) +
+         ", format=(string)NV12, framerate=(fraction)" + std::to_string(framerate) +
+         "/1 ! nvvidconv flip-method=" + std::to_string(flip_method) +
+         " ! video/x-raw, width=(int)" + std::to_string(display_width) + ", height=(int)" +
+         std::to_string(display_height) +
+         ", format=(string)BGRx ! videoconvert ! video/x-raw, format=(string)BGR ! appsink "
+         "max-buffers=2 drop=true";
+}
+
+bool Camera::read_frame(cv::Mat & frame)
+{
+  cap.read(frame);
+  if (frame.empty()) {
     return false;
   }
-
-  _image_height = camera_configs["image_height"];
-  _image_width = camera_configs["image_width"];
-  _base_line = camera_configs["base_line"];
-
-  camera_configs["LEFT.K"] >> K_l;
-  camera_configs["RIGHT.K"] >> K_r;
-
-  camera_configs["LEFT.T"] >> T_l;
-  camera_configs["RIGHT.T"] >> T_r;
-
-  camera_configs["LEFT.R"] >> R_l;
-  camera_configs["RIGHT.R"] >> R_r;
-
-  camera_configs["LEFT.D"] >> D_l;
-  camera_configs["RIGHT.D"] >> D_r;
-
-  if (
-    K_l.empty() || K_r.empty() || T_l.empty() || T_r.empty() || R_l.empty() || R_r.empty() ||
-    D_l.empty() || D_r.empty() || _image_height == 0 || _image_width == 0) {
-    std::cerr << "ERROR: Calibration parameters to rectify stereo are missing!" << std::endl;
-    return false;
-  }
-  size = cv::Size(_image_width, _image_height);
-  // _fx = P_l.at<double>(0, 0);
-  // _fy = P_l.at<double>(1, 1);
-  // _cx = P_l.at<double>(0, 2);
-  // _cy = P_l.at<double>(1, 2);
-  // _fx_inv = 1.0 / _fx;
-  // _fy_inv = 1.0 / _fy;
-  cv::stereoRectify(
-    K_l, D_l, K_r, D_r, size, R_r, T_r, R1, R2, P1, P2, Q, cv::CALIB_ZERO_DISPARITY, 0, size,
-    &valid_roi1, &valid_roi2);
-  cv::initUndistortRectifyMap(K_l, D_l, R1, P1, size, CV_32FC1, _mapl1, _mapl2);
-  cv::initUndistortRectifyMap(K_r, D_r, R2, P2, size, CV_32FC1, _mapr1, _mapr2);
   return true;
 }
 
-void Camera::undistort_stereo(
-  cv::Mat & image_left, cv::Mat & image_right, cv::Mat & image_left_rect,
-  cv::Mat & image_right_rect)
-{
-  cv::remap(image_left, image_left_rect, _mapl1, _mapl2, cv::INTER_LINEAR);
-  cv::remap(image_right, image_right_rect, _mapr1, _mapr2, cv::INTER_LINEAR);
-}
+Camera::~Camera() { cap.release(); }
