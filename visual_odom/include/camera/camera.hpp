@@ -22,15 +22,14 @@
 #define CAMERA_INFO_HPP_
 
 #include <yaml-cpp/yaml.h>
-
 #include <iostream>
-
 #include "opencv2/opencv.hpp"
 
 class Camera
 {
 private:
-  cv::VideoCapture cap;
+  cv::VideoCapture video_cap;
+  std::string gst_pipeline;
 
 private:
   std::string gstreamer_pipeline(
@@ -39,8 +38,9 @@ private:
 
 public:
   Camera(
-    int sensor_id = 0, int capture_width = 1280, int capture_height = 720, int display_width = 960,
-    int display_height = 600, int framerate = 60, int flip_method = 0);
+    int sensor_id, int capture_width, int capture_height, int display_width, int display_height,
+    int framerate, int flip_method);
+  bool open_device(void);
   bool read_frame(cv::Mat & frame);
   ~Camera();
 };

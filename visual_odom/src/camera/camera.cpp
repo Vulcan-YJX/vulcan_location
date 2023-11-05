@@ -25,13 +25,19 @@ Camera::Camera(
   int framerate, int flip_method)
 {
   // Create camera capture pipelines
-  std::string gst_pipeline = gstreamer_pipeline(
+  gst_pipeline = gstreamer_pipeline(
     sensor_id, capture_width, capture_height, display_width, display_height, framerate,
     flip_method);
-  cap(gst_pipeline, cv::CAP_GSTREAMER);
-  if (!cap.isOpened()) {
+
+}
+
+bool Camera::open_device(void){
+  video_cap.open(gst_pipeline, cv::CAP_GSTREAMER);
+  if (!video_cap.isOpened()) {
     std::cerr << "Failed to open camera." << std::endl;
+    return false;
   }
+  return true;
 }
 
 std::string Camera::gstreamer_pipeline(
@@ -51,11 +57,11 @@ std::string Camera::gstreamer_pipeline(
 
 bool Camera::read_frame(cv::Mat & frame)
 {
-  cap.read(frame);
+  video_cap.read(frame);
   if (frame.empty()) {
     return false;
   }
   return true;
 }
 
-Camera::~Camera() { cap.release(); }
+Camera::~Camera() { video_cap.release(); }
