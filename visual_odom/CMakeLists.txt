@@ -19,7 +19,7 @@ add_library(${LIB_NAME} SHARED
     # src/optflow_dense.cpp
     # src/feature_extraction/point_generation.cpp
     # src/feature_extraction/orb_detector.cpp
-    # src/feature_extraction/stereo_depth.cpp
+    src/feature_extraction/stereo_depth.cpp
     src/camera/camera.cpp
     src/camera/camera_info.cpp
 )

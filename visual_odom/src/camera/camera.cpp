@@ -28,10 +28,10 @@ Camera::Camera(
   gst_pipeline = gstreamer_pipeline(
     sensor_id, capture_width, capture_height, display_width, display_height, framerate,
     flip_method);
-
 }
 
-bool Camera::open_device(void){
+bool Camera::open_device(void)
+{
   video_cap.open(gst_pipeline, cv::CAP_GSTREAMER);
   if (!video_cap.isOpened()) {
     std::cerr << "Failed to open camera." << std::endl;

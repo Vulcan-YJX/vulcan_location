@@ -18,11 +18,13 @@
 * along with stairs_detection. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef CAMERA_INFO_HPP_
-#define CAMERA_INFO_HPP_
+#ifndef CAMERA_HPP_
+#define CAMERA_HPP_
 
 #include <yaml-cpp/yaml.h>
+
 #include <iostream>
+
 #include "opencv2/opencv.hpp"
 
 class Camera
@@ -45,4 +47,4 @@ public:
   ~Camera();
 };
 
-#endif /*CAMERA_INFO_HPP_*/
+#endif /*CAMERA_HPP_*/

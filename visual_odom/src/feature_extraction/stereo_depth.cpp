@@ -22,14 +22,14 @@
 
 #include "vpi_utils.hpp"
 
-// stereo_depth::stereo_depth(/* args */)
-// {
-// }
+StereoDepth::StereoDepth(/* args */) {}
 
-void stereo_depth::init_stereo(const std::string vpiBackend, uint16_t set_confidence)
+void StereoDepth::init_depth_pipeline(
+  std::string nvBackend, cv::Mat cvImageLeft, cv::Mat cvImageRight)
 {
-  thresholdValue = set_confidence;
-  strBackend = vpiBackend;
+  strBackend = nvBackend;
+  // =============================
+  // Parse command line parameters
   if (strBackend == "cpu") {
     backends = VPI_BACKEND_CPU;
   } else if (strBackend == "cuda") {
@@ -43,32 +43,24 @@ void stereo_depth::init_stereo(const std::string vpiBackend, uint16_t set_confid
   } else {
     throw std::runtime_error(
       "Backend '" + strBackend +
-      "' not recognized, it must be either cpu, cuda, pva, ofa, ofa-pva-vic or pva-nvenc-vic.");
+      "' not recognized, it must be either cpu, cuda, pva, ofa, ofa-pva-vic.");
   }
-
   // =================================
   // Allocate all VPI resources needed
 
-  int32_t inputWidth = stereo_camera_.size.width;
-  int32_t inputHeight = stereo_camera_.size.height;
+  int32_t inputWidth = cvImageLeft.cols;
+  int32_t inputHeight = cvImageLeft.rows;
 
   // Create the stream that will be used for processing.
   CHECK_STATUS(vpiStreamCreate(0, &stream));
-
   // We now wrap the loaded images into a VPIImage object to be used by VPI.
   // VPI won't make a copy of it, so the original image must be in scope at all times.
-  //  CHECK_STATUS(vpiImageCreateWrapperOpenCVMat(cvImageLeft, 0, &inLeft));
-  //  CHECK_STATUS(vpiImageCreateWrapperOpenCVMat(cvImageRight, 0, &inRight));
-
+  CHECK_STATUS(vpiImageCreateWrapperOpenCVMat(cvImageLeft, 0, &inLeft));
+  CHECK_STATUS(vpiImageCreateWrapperOpenCVMat(cvImageRight, 0, &inRight));
   // Format conversion parameters needed for input pre-processing
   CHECK_STATUS(vpiInitConvertImageFormatParams(&convParams));
-
   // Set algorithm parameters to be used. Only values what differs from defaults will be overwritten.
   CHECK_STATUS(vpiInitStereoDisparityEstimatorCreationParams(&stereoParams));
-
-  // Default format and size for inputs and outputs
-  stereoFormat = VPI_IMAGE_FORMAT_Y16_ER;
-  disparityFormat = VPI_IMAGE_FORMAT_S16;
 
   int stereoWidth = inputWidth;
   int stereoHeight = inputHeight;
@@ -94,9 +86,8 @@ void stereo_depth::init_stereo(const std::string vpiBackend, uint16_t set_confid
       stereoWidth = outputWidth * stereoParams.downscaleFactor;
       stereoHeight = outputHeight * stereoParams.downscaleFactor;
     }
-
     // Maximum disparity can be either 128 or 256
-    stereoParams.maxDisparity = 128;
+    stereoParams.maxDisparity = 256;
   } else if (strBackend == "pva") {
     // PVA requires that input and output resolution is 480x270
     stereoWidth = outputWidth = 480;
@@ -137,74 +128,82 @@ void stereo_depth::init_stereo(const std::string vpiBackend, uint16_t set_confid
   }
 }
 
-bool stereo_depth::do_estimator(cv::Mat cvImageLeft, cv::Mat cvImageRight, cv::Mat & cvDisparity)
+bool StereoDepth::do_estimate(cv::Mat cvImageLeft, cv::Mat cvImageRight, int thresholdValue)
 {
-  if (strBackend.find("pva") != std::string::npos) {
-    cv::Mat temp;
-    cv::resize(cvImageLeft, temp, stereo_camera_.size);
-    cvImageLeft = temp;
-    cv::resize(cvImageRight, temp, stereo_camera_.size);
-    cvImageRight = temp;
-  }
-  CHECK_STATUS(vpiImageSetWrappedOpenCVMat(inLeft, cvImageLeft));
-  CHECK_STATUS(vpiImageSetWrappedOpenCVMat(inRight, cvImageRight));
+  try {
+    // ================
+    // Processing stage
+    if (strBackend == "pva" || strBackend == "ofa" || strBackend == "ofa-pva-vic") {
+      // Convert opencv input to temporary grayscale format using CUDA
+      CHECK_STATUS(
+        vpiSubmitConvertImageFormat(stream, VPI_BACKEND_CUDA, inLeft, tmpLeft, &convParams));
+      CHECK_STATUS(
+        vpiSubmitConvertImageFormat(stream, VPI_BACKEND_CUDA, inRight, tmpRight, &convParams));
 
-  if (
-    strBackend == "pva-nvenc-vic" || strBackend == "pva" || strBackend == "ofa" ||
-    strBackend == "ofa-pva-vic") {
-    // Convert opencv input to temporary grayscale format using CUDA
-    CHECK_STATUS(
-      vpiSubmitConvertImageFormat(stream, VPI_BACKEND_CUDA, inLeft, tmpLeft, &convParams));
-    CHECK_STATUS(
-      vpiSubmitConvertImageFormat(stream, VPI_BACKEND_CUDA, inRight, tmpRight, &convParams));
+      // Do both scale and final image format conversion on VIC.
+      CHECK_STATUS(vpiSubmitRescale(
+        stream, VPI_BACKEND_VIC, tmpLeft, stereoLeft, VPI_INTERP_LINEAR, VPI_BORDER_CLAMP, 0));
+      CHECK_STATUS(vpiSubmitRescale(
+        stream, VPI_BACKEND_VIC, tmpRight, stereoRight, VPI_INTERP_LINEAR, VPI_BORDER_CLAMP, 0));
+    } else {
+      // Convert opencv input to grayscale format using CUDA
+      CHECK_STATUS(
+        vpiSubmitConvertImageFormat(stream, VPI_BACKEND_CUDA, inLeft, stereoLeft, &convParams));
+      CHECK_STATUS(
+        vpiSubmitConvertImageFormat(stream, VPI_BACKEND_CUDA, inRight, stereoRight, &convParams));
+    }
 
-    // Do both scale and final image format conversion on VIC.
-    CHECK_STATUS(vpiSubmitRescale(
-      stream, VPI_BACKEND_VIC, tmpLeft, stereoLeft, VPI_INTERP_LINEAR, VPI_BORDER_CLAMP, 0));
-    CHECK_STATUS(vpiSubmitRescale(
-      stream, VPI_BACKEND_VIC, tmpRight, stereoRight, VPI_INTERP_LINEAR, VPI_BORDER_CLAMP, 0));
-  } else {
-    // Convert opencv input to grayscale format using CUDA
-    CHECK_STATUS(
-      vpiSubmitConvertImageFormat(stream, VPI_BACKEND_CUDA, inLeft, stereoLeft, &convParams));
-    CHECK_STATUS(
-      vpiSubmitConvertImageFormat(stream, VPI_BACKEND_CUDA, inRight, stereoRight, &convParams));
-  }
+    // ------------------------------
+    // Do stereo disparity estimation
+    // Submit it with the input and output images
+    CHECK_STATUS(vpiSubmitStereoDisparityEstimator(
+      stream, backends, stereo, stereoLeft, stereoRight, disparity, confidenceMap, NULL));
 
-  CHECK_STATUS(vpiSubmitStereoDisparityEstimator(
-    stream, backends, stereo, stereoLeft, stereoRight, disparity, confidenceMap, NULL));
+    // Wait until the algorithm finishes processing
+    CHECK_STATUS(vpiStreamSync(stream));
 
-  // Wait until the algorithm finishes processing
-  CHECK_STATUS(vpiStreamSync(stream));
-  VPIImageData data;
-  CHECK_STATUS(
-    vpiImageLockData(disparity, VPI_LOCK_READ, VPI_IMAGE_BUFFER_HOST_PITCH_LINEAR, &data));
-
-  // Make an OpenCV matrix out of this image
-  CHECK_STATUS(vpiImageDataExportOpenCVMat(data, &cvDisparity));
-
-  cvDisparity.convertTo(cvDisparity, CV_32F, 1.0 / 32.0, 0);
-  if (confidenceMap) {
+    // ========================================
+    // Output pre-processing and saving to disk
+    // Lock output to retrieve its data on cpu memory
     VPIImageData data;
     CHECK_STATUS(
-      vpiImageLockData(confidenceMap, VPI_LOCK_READ, VPI_IMAGE_BUFFER_HOST_PITCH_LINEAR, &data));
-    cv::Mat cvConfidence;
-    CHECK_STATUS(vpiImageDataExportOpenCVMat(data, &cvConfidence));
-    cvConfidence.convertTo(cvConfidence, CV_8UC1, 255.0 / 65535, 0);
-    cv::Mat cvMask;
-    cv::threshold(cvConfidence, cvMask, thresholdValue, 255, cv::THRESH_BINARY);
+      vpiImageLockData(disparity, VPI_LOCK_READ, VPI_IMAGE_BUFFER_HOST_PITCH_LINEAR, &data));
 
-    CHECK_STATUS(vpiImageUnlock(confidenceMap));
-    cv::Mat resultImage;
-    cvDisparity.convertTo(cvMask, CV_32F, 1.0, 0);
-    bitwise_and(cvDisparity, cvMask, cvDisparity);
+    // Make an OpenCV matrix out of this image
+    cv::Mat cvDisparity;
+    CHECK_STATUS(vpiImageDataExportOpenCVMat(data, &cvDisparity));
+
+    // Q10.5 -> float
+    cvDisparity.convertTo(cvDisparity, CV_32F, 1.0 / 32.0, 0);
+
+    // Done handling output, don't forget to unlock it.
+    CHECK_STATUS(vpiImageUnlock(disparity));
+
+    // If we have a confidence map,
+    if (confidenceMap) {
+      VPIImageData data;
+      CHECK_STATUS(
+        vpiImageLockData(confidenceMap, VPI_LOCK_READ, VPI_IMAGE_BUFFER_HOST_PITCH_LINEAR, &data));
+      cv::Mat cvConfidence;
+      CHECK_STATUS(vpiImageDataExportOpenCVMat(data, &cvConfidence));
+      cvConfidence.convertTo(cvConfidence, CV_8UC1, 255.0 / 65535, 0);
+      cv::Mat cvMask;
+      cv::threshold(cvConfidence, cvMask, thresholdValue, 255, cv::THRESH_BINARY);
+
+      CHECK_STATUS(vpiImageUnlock(confidenceMap));
+      cv::Mat resultImage;
+      cvDisparity.convertTo(cvMask, CV_32F, 1.0, 0);
+      bitwise_and(cvDisparity, cvMask, cvDisparity);
+    }
+  } catch (std::exception & e) {
+    std::cerr << e.what() << std::endl;
+    return false;
   }
-  // applyColorMap(cvDisparity, cvDisparityColor, cv::COLORMAP_JET);
-  CHECK_STATUS(vpiImageUnlock(disparity));
   return true;
+  // cv::imwrite("disparity_" + strBackend + ".png", cvDisparityColor);
 }
 
-stereo_depth::~stereo_depth()
+StereoDepth::~StereoDepth()
 {
   vpiStreamDestroy(stream);
   vpiImageDestroy(inLeft);

@@ -22,7 +22,6 @@
 #include <iostream>
 #include <sstream>
 
-#include "camera/camera.hpp"
 #include "opencv2/core/version.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "vpi/Image.h"
@@ -32,14 +31,16 @@
 #include "vpi/algo/Rescale.h"
 #include "vpi/algo/StereoDisparity.h"
 
-class stereo_depth
+class StereoDepth
 {
 private:
-  Camera stereo_camera_;
   uint64_t backends;
-  uint16_t thresholdValue;
   std::string strBackend;
-  cv::Mat setup_img;
+  VPIConvertImageFormatParams convParams;
+  VPIStereoDisparityEstimatorCreationParams stereoParams;
+  // Default format and size for inputs and outputs
+  VPIImageFormat stereoFormat = VPI_IMAGE_FORMAT_Y16_ER;
+  VPIImageFormat disparityFormat = VPI_IMAGE_FORMAT_S16;
 
   // VPI objects that will be used
   VPIImage inLeft = NULL;
@@ -53,14 +54,9 @@ private:
   VPIStream stream = NULL;
   VPIPayload stereo = NULL;
 
-  VPIImageFormat stereoFormat;
-  VPIImageFormat disparityFormat;
-  VPIConvertImageFormatParams convParams;
-  VPIStereoDisparityEstimatorCreationParams stereoParams;
-
 public:
-  stereo_depth(/* args */) {}
-  ~stereo_depth();
-  void init_stereo(const std::string vpiBackend, uint16_t set_confidence);
-  bool do_estimator(cv::Mat cvImageLeft, cv::Mat cvImageRight, cv::Mat & cvDisparity);
+  void init_depth_pipeline(std::string strBackend, cv::Mat cvImageLeft, cv::Mat cvImageRight);
+  bool do_estimate(cv::Mat cvImageLeft, cv::Mat cvImageRight, int thresholdValue);
+  StereoDepth(/* args */);
+  ~StereoDepth();
 };

@@ -52,7 +52,7 @@ public:
   void undistort_stereo(
     cv::Mat & image_left, cv::Mat & image_right, cv::Mat & image_left_rect,
     cv::Mat & image_right_rect);
-  ~CameraInfo();
+  ~CameraInfo(){};
 };
 
 #endif /*CAMERA_INFO_HPP_*/
