@@ -59,6 +59,7 @@ bool CameraInfo::init_camera_info(const std::string & camera_file)
   // _cy = P_l.at<double>(1, 2);
   // _fx_inv = 1.0 / _fx;
   // _fy_inv = 1.0 / _fy;
+
   cv::stereoRectify(
     K_l, D_l, K_r, D_r, size, R_r, T_r, R1, R2, P1, P2, Q, cv::CALIB_ZERO_DISPARITY, 0, size,
     &valid_roi1, &valid_roi2);

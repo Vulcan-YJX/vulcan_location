@@ -27,6 +27,32 @@
 
 #include "opencv2/opencv.hpp"
 
+struct CameraType
+{
+  uint32_t height;
+  uint32_t width;
+  std::string distortion_model;
+};
+
+struct RegionOfInterest
+{
+  uint32_t x_offset;
+  uint32_t y_offset;
+  uint32_t height;
+  uint32_t width;
+  bool do_rectify;
+};
+
+struct CameraCalibT
+{
+  CameraType image_type;
+  std::vector<double> D;
+  std::array<double, 9> K;
+  std::array<double, 9> R;
+  std::array<double, 12> P;
+};
+
+
 class CameraInfo
 {
 private:

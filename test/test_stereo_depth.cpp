@@ -66,9 +66,11 @@ int main(int argc, char * argv[])
     throw std::runtime_error("Can't open '");
   }
   stereo_depth->init_depth_pipeline("cuda", cvImageLeft, cvImageRight);
-  if(!stereo_depth->do_estimate(cvImageLeft, cvImageRight,250)){
+  cv::Mat cvDisparity;
+  if(!stereo_depth->do_estimate(cvImageLeft, cvImageRight, cvDisparity, 250)){
     std::cerr << "wrong generate stereo" << std::endl;
   }
+  cv::imwrite("cvDisparity.png",cvDisparity);
 
   return 0;
 }

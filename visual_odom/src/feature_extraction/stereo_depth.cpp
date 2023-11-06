@@ -128,11 +128,14 @@ void StereoDepth::init_depth_pipeline(
   }
 }
 
-bool StereoDepth::do_estimate(cv::Mat cvImageLeft, cv::Mat cvImageRight, int thresholdValue)
+bool StereoDepth::do_estimate(cv::Mat cvImageLeft, cv::Mat cvImageRight, cv::Mat & cvDisparity ,int thresholdValue)
 {
   try {
     // ================
     // Processing stage
+    vpiImageSetWrappedOpenCVMat(inLeft, cvImageLeft);
+    vpiImageSetWrappedOpenCVMat(inRight, cvImageRight);
+
     if (strBackend == "pva" || strBackend == "ofa" || strBackend == "ofa-pva-vic") {
       // Convert opencv input to temporary grayscale format using CUDA
       CHECK_STATUS(
@@ -170,7 +173,6 @@ bool StereoDepth::do_estimate(cv::Mat cvImageLeft, cv::Mat cvImageRight, int thr
       vpiImageLockData(disparity, VPI_LOCK_READ, VPI_IMAGE_BUFFER_HOST_PITCH_LINEAR, &data));
 
     // Make an OpenCV matrix out of this image
-    cv::Mat cvDisparity;
     CHECK_STATUS(vpiImageDataExportOpenCVMat(data, &cvDisparity));
 
     // Q10.5 -> float

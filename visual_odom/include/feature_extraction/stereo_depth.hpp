@@ -56,7 +56,7 @@ private:
 
 public:
   void init_depth_pipeline(std::string strBackend, cv::Mat cvImageLeft, cv::Mat cvImageRight);
-  bool do_estimate(cv::Mat cvImageLeft, cv::Mat cvImageRight, int thresholdValue);
+  bool do_estimate(cv::Mat cvImageLeft, cv::Mat cvImageRight, cv::Mat & cvDisparity, int thresholdValue);
   StereoDepth(/* args */);
   ~StereoDepth();
 };
