@@ -25,6 +25,7 @@
 
 #include <iostream>
 
+#include "camera/camera_info.hpp"
 #include "opencv2/opencv.hpp"
 
 class Camera
